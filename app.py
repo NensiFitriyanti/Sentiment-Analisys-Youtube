@@ -21,6 +21,10 @@ youtube = build('youtube', 'v3', developerKey=API_KEY)
 analyzer = SentimentIntensityAnalyzer()
 
 # ================= GOOGLE SHEET (Service Account via Secrets) =================
+if "GSPREAD" not in st.secrets or "json" not in st.secrets["GSPREAD"]:
+    st.error("⚠️ GSpread JSON belum diatur di Streamlit Cloud → Secrets")
+    st.stop()
+
 json_key = st.secrets["GSPREAD"]["json"]
 
 credentials = Credentials.from_service_account_info(
@@ -95,7 +99,7 @@ st_autorefresh(interval=30000, key="refresh")
 
 # ================= INPUT MANUAL =================
 video_input = st.text_input(
-    "https://youtu.be/Ugfjq0rDz8g?si=vWNO6nEAj9XB2LOB:", 
+    "https://youtu.be/Ugfjq0rDz8g?si=vWNO6nEAj9XB2LOB:",
     value=""
 )
 
@@ -207,7 +211,6 @@ if all_data:
     st.pyplot(fig)
 
     # ========== Tombol Download ==========
-
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="⬇️ Download Hasil (CSV)",
