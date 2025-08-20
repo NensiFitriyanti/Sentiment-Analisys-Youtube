@@ -95,7 +95,7 @@ st_autorefresh(interval=30000, key="refresh")
 
 # ================= INPUT MANUAL =================
 video_input = st.text_input(
-    "Masukkan Video ID atau URL YouTube (pisahkan dengan koma):", 
+    "https://youtu.be/Ugfjq0rDz8g?si=vWNO6nEAj9XB2LOB:", 
     value=""
 )
 
