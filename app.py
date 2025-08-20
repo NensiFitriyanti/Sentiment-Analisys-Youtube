@@ -7,37 +7,47 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from io import BytesIO
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import json
+from google.oauth2.service_account import Credentials
 
 # ================= LOAD API KEY =================
-if "YOUTUBE_API_KEY" not in st.secrets:
+if "YOUTUBE" not in st.secrets or "API_KEY" not in st.secrets["YOUTUBE"]:
     st.error("⚠️ API Key belum diatur di Streamlit Cloud → Secrets")
     st.stop()
 
-API_KEY = st.secrets["YOUTUBE_API_KEY"]
+API_KEY = st.secrets["YOUTUBE"]["API_KEY"]
 
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 analyzer = SentimentIntensityAnalyzer()
 
 # ================= GOOGLE SHEET (Service Account via Secrets) =================
-import json
-from google.oauth2.service_account import Credentials
-import gspread
+json_key = st.secrets["GSPREAD"]["json"]
 
-# Ambil JSON service account dari Streamlit Secrets
-json_key = st.secrets["GSPREAD_KEY_JSON"]
-
-# Load credential dari JSON string
 credentials = Credentials.from_service_account_info(
     json.loads(json_key),
-    scopes=["https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"]
+    scopes=[
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
 )
 
-# Authorize gspread
 gc = gspread.authorize(credentials)
-sh = gc.open("YouTubeVideos")  # nama Google Sheet
-worksheet = sh.sheet1  # sheet pertama
+sh = gc.open("YouTubeVideos")
+worksheet = sh.sheet1
+
+# ================= FUNCTION LOAD & SAVE VIDEO =================
+def load_videos():
+    try:
+        data = worksheet.col_values(1)
+        return data[1:]  # skip header
+    except Exception:
+        return []
+
+def save_video(video_id):
+    try:
+        worksheet.append_row([video_id])
+    except Exception as e:
+        st.error(f"Gagal menyimpan video: {e}")
 
 # ================= FUNCTION GET COMMENT =================
 def get_comments(video_id, max_results=200):
@@ -91,7 +101,7 @@ video_input = st.text_input(
 
 # ================= SESSION STATE =================
 if "video_ids" not in st.session_state:
-    st.session_state.video_ids = load_videos()  # load dari Google Sheet
+    st.session_state.video_ids = load_videos()
 
 # Tambahkan input manual
 if video_input:
@@ -197,6 +207,7 @@ if all_data:
     st.pyplot(fig)
 
     # ========== Tombol Download ==========
+
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="⬇️ Download Hasil (CSV)",
