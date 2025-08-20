@@ -19,26 +19,25 @@ API_KEY = st.secrets["YOUTUBE_API_KEY"]
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 analyzer = SentimentIntensityAnalyzer()
 
-# ================= GOOGLE SHEET =================
-SCOPE = ["https://spreadsheets.google.com/feeds","https://www.googleapis.com/auth/drive"]
-# Pastikan file JSON key sudah diupload ke project Streamlit Cloud
-gc = gspread.service_account(filename="gspread_key.json")
-sh = gc.open("YouTubeVideos")  # nama sheet
+# ================= GOOGLE SHEET (Service Account via Secrets) =================
+import json
+from google.oauth2.service_account import Credentials
+import gspread
+
+# Ambil JSON service account dari Streamlit Secrets
+json_key = st.secrets["GSPREAD_KEY_JSON"]
+
+# Load credential dari JSON string
+credentials = Credentials.from_service_account_info(
+    json.loads(json_key),
+    scopes=["https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"]
+)
+
+# Authorize gspread
+gc = gspread.authorize(credentials)
+sh = gc.open("YouTubeVideos")  # nama Google Sheet
 worksheet = sh.sheet1  # sheet pertama
-
-# Fungsi load video dari sheet
-def load_videos():
-    try:
-        data = worksheet.col_values(1)[1:]  # lewati header
-        return data
-    except:
-        return []
-
-# Fungsi simpan video ke sheet
-def save_video(vid):
-    existing = load_videos()
-    if vid not in existing:
-        worksheet.append_row([vid])
 
 # ================= FUNCTION GET COMMENT =================
 def get_comments(video_id, max_results=200):
