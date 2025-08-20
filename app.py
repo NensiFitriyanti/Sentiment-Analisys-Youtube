@@ -36,7 +36,7 @@ credentials = Credentials.from_service_account_info(
 )
 
 gc = gspread.authorize(credentials)
-sh = gc.open("YouTubeVideos")
+sh = gc.open("streamlit-sheet")
 worksheet = sh.sheet1
 
 # ================= FUNCTION LOAD & SAVE VIDEO =================
